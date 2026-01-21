@@ -874,7 +874,7 @@ export function IconForge() {
       <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shadow-sm z-20 relative">
          <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white"><Settings size={20} /></div>
-            <h1 className="text-xl font-bold text-slate-800">Icon Forge Pro</h1>
+            <h1 className="text-xl font-bold text-slate-800">SVG Icon Forge</h1>
          </div>
          <div className="flex items-center gap-4">
             <button onClick={() => fileInputRef.current?.click()} className="text-slate-600 hover:text-indigo-600 text-sm font-medium flex gap-1 items-center"><Upload size={16}/> インポート</button>
