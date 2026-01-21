@@ -33,11 +33,11 @@ export function IconForge() {
   const [tool, setTool] = useState('select');
   const [selectedElementIds, setSelectedElementIds] = useState([]);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportSize, setExportSize] = useState(512);
+  const [isTransparent, setIsTransparent] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('すべて');
   const [notification, setNotification] = useState(null);
-  const [exportSize, setExportSize] = useState(512);
-  const [isTransparent, setIsTransparent] = useState(true);
   const [spriteList, setSpriteList] = useState([]);
 
   const svgRef = useRef(null);
@@ -809,6 +809,37 @@ export function IconForge() {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${icon.viewBox}">${generateInnerSVG(icon.elements)}</svg>`;
   };
 
+  const handleExportSVG = () => {
+    const blob = new Blob([generateSVGString(editingIcon)], { type: 'image/svg+xml' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${editingIcon.enName || 'icon'}.svg`;
+    link.click();
+    showNotification('SVGをダウンロードしました');
+  };
+
+  const handleExportPNG = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = exportSize;
+    canvas.height = exportSize;
+    const ctx = canvas.getContext('2d');
+    if (!isTransparent) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, exportSize, exportSize); }
+
+    const img = new Image();
+    const rawSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${editingIcon.viewBox}" width="${exportSize}" height="${exportSize}">${generateInnerSVG(editingIcon.elements)}</svg>`;
+    const url = URL.createObjectURL(new Blob([rawSvg], { type: 'image/svg+xml' }));
+
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0);
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = `${editingIcon.enName || 'icon'}.png`;
+      link.click();
+      showNotification('PNGをダウンロードしました');
+    };
+    img.src = url;
+  };
+
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKey = (e) => {
@@ -981,6 +1012,51 @@ export function IconForge() {
             categories={categories}
          />
       </div>
+
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+              <div className="p-4 border-b flex justify-between items-center bg-slate-50">
+                 <h3 className="font-bold text-slate-700">書き出し設定</h3>
+                 <button onClick={() => setIsExportModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
+              </div>
+              <div className="p-6 space-y-6">
+                 <div className="flex justify-center py-4 bg-slate-100/50 border rounded-lg overflow-hidden">
+                    <svg viewBox={editingIcon.viewBox} width="96" height="96" dangerouslySetInnerHTML={{ __html: generateInnerSVG(editingIcon.elements) }}/>
+                 </div>
+
+                 <div className="space-y-4">
+                    <button onClick={handleExportSVG} className="w-full border border-slate-300 rounded-lg p-3 flex items-center justify-between hover:bg-slate-50 hover:border-indigo-300 transition group">
+                       <div className="flex items-center gap-3">
+                          <div className="p-2 bg-indigo-50 text-indigo-600 rounded"><Code size={20}/></div>
+                          <div className="text-left">
+                             <div className="font-bold text-sm text-slate-700 group-hover:text-indigo-700">SVG形式</div>
+                             <div className="text-xs text-slate-500">ベクターデータ (Web/Code用)</div>
+                          </div>
+                       </div>
+                       <Download size={16} className="text-slate-400 group-hover:text-indigo-600"/>
+                    </button>
+
+                    <div className="border border-slate-300 rounded-lg p-3 space-y-3">
+                       <div className="flex items-center gap-3 mb-2">
+                          <div className="p-2 bg-pink-50 text-pink-600 rounded"><ImageIcon size={20}/></div>
+                          <div className="font-bold text-sm text-slate-700">PNG形式</div>
+                       </div>
+                       <div className="pl-12 pr-2 space-y-3">
+                          <div className="flex items-center justify-between text-xs"><span>サイズ: <strong>{exportSize}px</strong></span></div>
+                          <input type="range" min="64" max="1024" step="64" value={exportSize} onChange={e => setExportSize(parseInt(e.target.value))} className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-pink-500"/>
+                          <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                             <input type="checkbox" checked={isTransparent} onChange={e => setIsTransparent(e.target.checked)} className="rounded text-pink-500 focus:ring-pink-500"/>
+                             背景を透過する
+                          </label>
+                          <button onClick={handleExportPNG} className="w-full bg-slate-800 text-white py-2 rounded text-xs hover:bg-slate-700">PNGをダウンロード</button>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
 
       {notification && (
         <div className={`fixed bottom-6 right-6 px-4 py-3 rounded shadow-lg flex items-center gap-3 z-50 ${notification.type === 'error' ? 'bg-red-500 text-white' : 'bg-slate-800 text-white'}`}>
